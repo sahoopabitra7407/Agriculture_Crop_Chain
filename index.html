@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agriculture Crop Supply Chain Database</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+  <header>
+    <div class="hero">
+      <h1>🌾 Agriculture Crop Supply Chain Database</h1>
+      <p>Seamlessly Manage Suppliers, Crops, Orders, and Payments in Your Supply Chain</p>
+    </div>
+  </header>
+
+  <div class="container">
+    <nav class="sidebar">
+      <button onclick="showSection('forms')"><i class="fas fa-edit"></i> Data Entry</button>
+      <button onclick="showSection('dashboard')" class="active"><i class="fas fa-chart-line"></i> Dashboard</button>
+      <button onclick="showSection('chain')"><i class="fas fa-link"></i> Chain Flow</button>
+    </nav>
+
+    <main>
+      <!-- =======================
+           DATA ENTRY SECTION
+      ======================= -->
+      <section id="forms" class="section">
+        <div class="tabs">
+          <button class="tab-btn active" onclick="showTab('farmer')"><i class="fas fa-user-friends"></i> Supplier</button>
+          <button class="tab-btn" onclick="showTab('crop')"><i class="fas fa-seedling"></i> Crop</button>
+          <button class="tab-btn" onclick="showTab('order')"><i class="fas fa-shopping-cart"></i> Order</button>
+          <button class="tab-btn" onclick="showTab('payment')"><i class="fas fa-credit-card"></i> Payment</button>
+        </div>
+
+        <!-- Add Forms -->
+        <form id="farmerForm" class="form active">
+          <h2>Supplier Onboarding</h2>
+          <input type="text" id="farmerId" placeholder="Supplier ID" required>
+          <input type="text" id="farmerName" placeholder="Name" required>
+          <input type="text" id="farmerContact" placeholder="Contact" required>
+          <input type="text" id="farmerLocation" placeholder="Farm Location" required>
+          <button type="submit"><i class="fas fa-save"></i> Register Supplier</button>
+        </form>
+
+        <form id="cropForm" class="form" onsubmit="saveCrop(event)">
+          <h2>Add Crop to Inventory</h2>
+          <input type="text" id="cropId" placeholder="Crop ID" required>
+          <input type="text" id="cropName" placeholder="Crop Name" required>
+          <input type="text" id="cropSeason" placeholder="Growing Season" required>
+          <input type="number" id="cropPrice" placeholder="Price per Unit (₹)" required>
+          <button type="submit"><i class="fas fa-plus"></i> Add Crop</button>
+        </form>
+
+        <form id="orderForm" class="form" onsubmit="saveOrder(event)">
+          <h2>Place Supply Chain Order</h2>
+          <input type="text" id="orderId" placeholder="Order ID" required>
+          <input type="text" id="customerName" placeholder="Buyer Name" required>
+          <select id="orderCrop" required>
+            <option value="">Select Crop</option>
+          </select>
+          <input type="number" id="orderQty" placeholder="Quantity (Units)" required onchange="calculateTotal()">
+          <input type="number" id="orderTotal" placeholder="Total Cost (₹)" readonly>
+          <button type="submit"><i class="fas fa-check"></i> Place Order</button>
+        </form>
+
+        <form id="paymentForm" class="form" onsubmit="savePayment(event)">
+          <h2>Process Payment</h2>
+          <input type="text" id="paymentId" placeholder="Payment ID" required>
+          <input type="text" id="paymentOrderId" placeholder="Order ID" required>
+          <select id="paymentMode" required>
+            <option value="Cash">Cash</option>
+            <option value="Card">Card</option>
+            <option value="Online">Online</option>
+          </select>
+          <select id="paymentStatus" required>
+            <option value="Paid">Paid</option>
+            <option value="Pending">Pending</option>
+          </select>
+          <button type="submit"><i class="fas fa-money-bill-wave"></i> Process Payment</button>
+        </form>
+
+        <!-- Edit Forms (hidden by default) -->
+        <form id="editSupplierForm" class="form" style="display:none;">
+          <h2>Edit Supplier</h2>
+          <input type="text" id="editSupplierId" readonly>
+          <input type="text" id="editSupplierName" required>
+          <input type="text" id="editSupplierContact" required>
+          <input type="text" id="editSupplierLocation" required>
+          <button type="submit">Update Supplier</button>
+        </form>
+
+        <form id="editCropForm" class="form" style="display:none;">
+          <h2>Edit Crop</h2>
+          <input type="text" id="editCropId" readonly>
+          <input type="text" id="editCropName" required>
+          <input type="text" id="editCropSeason" required>
+          <input type="number" id="editCropPrice" required>
+          <button type="submit">Update Crop</button>
+        </form>
+
+        <form id="editOrderForm" class="form" style="display:none;">
+          <h2>Edit Order</h2>
+          <input type="text" id="editOrderId" readonly>
+          <input type="text" id="editCustomerName" required>
+          <input type="text" id="editOrderCropId" required>
+          <input type="number" id="editOrderQty" required>
+          <input type="number" id="editOrderTotal" required>
+          <button type="submit">Update Order</button>
+        </form>
+
+        <form id="editPaymentForm" class="form" style="display:none;">
+          <h2>Edit Payment</h2>
+          <input type="text" id="editPaymentId" readonly>
+          <input type="text" id="editPaymentOrderId" required>
+          <input type="text" id="editPaymentMode" required>
+          <input type="text" id="editPaymentStatus" required>
+          <button type="submit">Update Payment</button>
+        </form>
+      </section>
+
+      <!-- =======================
+           DASHBOARD SECTION
+      ======================= -->
+      <section id="dashboard" class="section active">
+        <h2>Supply Chain Dashboard</h2>
+        <div class="quick-stats">
+          <div class="stat-item"><i class="fas fa-users"></i><span id="totalFarmers">0</span><p>Suppliers</p></div>
+          <div class="stat-item"><i class="fas fa-leaf"></i><span id="totalCrops">0</span><p>Crops</p></div>
+          <div class="stat-item"><i class="fas fa-truck"></i><span id="totalOrders">0</span><p>Orders</p></div>
+          <div class="stat-item"><i class="fas fa-rupee-sign"></i><span id="totalPayments">0</span><p>Payments</p></div>
+        </div>
+
+        <input type="text" id="search" placeholder="Search suppliers, crops, or orders...">
+
+        <div class="data-grid">
+          <div class="data-section"><h3>Suppliers</h3><div id="farmersList" class="list"></div></div>
+          <div class="data-section"><h3>Crops</h3><div id="cropsList" class="list"></div></div>
+          <div class="data-section"><h3>Orders</h3><div id="ordersList" class="list"></div></div>
+          <div class="data-section"><h3>Payments</h3><div id="paymentsList" class="list"></div></div>
+        </div>
+      </section>
+
+      <!-- =======================
+           CHAIN FLOW SECTION
+      ======================= -->
+      <section id="chain" class="section">
+        <h2>Supply Chain Flow</h2>
+        <div class="chain-flow">
+          <div class="chain-step"><i class="fas fa-tractor"></i><h4>Supplier Farming</h4><p>Crops grown by suppliers.</p></div>
+          <i class="fas fa-arrow-right chain-arrow"></i>
+          <div class="chain-step"><i class="fas fa-seedling"></i><h4>Crop Inventory</h4><p>Crops added to database.</p></div>
+          <i class="fas fa-arrow-right chain-arrow"></i>
+          <div class="chain-step"><i class="fas faHere’s the **full HTML code** with everything integrated: your original structure, the add forms, the dashboard, the chain flow, and the new hidden **edit forms** for Supplier, Crop, Order, and Payment.  
+
+You can copy‑paste this directly into your project:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agriculture Crop Supply Chain Database</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+  <header>
+    <div class="hero">
+      <h1>🌾 Agriculture Crop Supply Chain Database</h1>
+      <p>Seamlessly Manage Suppliers, Crops, Orders, and Payments in Your Supply Chain</p>
+    </div>
+  </header>
+
+  <div class="container">
+    <nav class="sidebar">
+      <button onclick="showSection('forms')"><i class="fas fa-edit"></i> Data Entry</button>
+      <button onclick="showSection('dashboard')" class="active"><i class="fas fa-chart-line"></i> Dashboard</button>
+      <button onclick="showSection('chain')"><i class="fas fa-link"></i> Chain Flow</button>
+    </nav>
+
+    <main>
+      <!-- =======================
+           DATA ENTRY SECTION
+      ======================= -->
+      <section id="forms" class="section">
+        <div class="tabs">
+          <button class="tab-btn active" onclick="showTab('farmer')"><i class="fas fa-user-friends"></i> Supplier</button>
+          <button class="tab-btn" onclick="showTab('crop')"><i class="fas fa-seedling"></i> Crop</button>
+          <button class="tab-btn" onclick="showTab('order')"><i class="fas fa-shopping-cart"></i> Order</button>
+          <button class="tab-btn" onclick="showTab('payment')"><i class="fas fa-credit-card"></i> Payment</button>
+        </div>
+
+        <!-- Add Forms -->
+        <form id="farmerForm" class="form active">
+          <h2>Supplier Onboarding</h2>
+          <input type="text" id="farmerId" placeholder="Supplier ID" required>
+          <input type="text" id="farmerName" placeholder="Name" required>
+          <input type="text" id="farmerContact" placeholder="Contact" required>
+          <input type="text" id="farmerLocation" placeholder="Farm Location" required>
+          <button type="submit"><i class="fas fa-save"></i> Register Supplier</button>
+        </form>
+
+        <form id="cropForm" class="form" onsubmit="saveCrop(event)">
+          <h2>Add Crop to Inventory</h2>
+          <input type="text" id="cropId" placeholder="Crop ID" required>
+          <input type="text" id="cropName" placeholder="Crop Name" required>
+          <input type="text" id="cropSeason" placeholder="Growing Season" required>
+          <input type="number" id="cropPrice" placeholder="Price per Unit (₹)" required>
+          <button type="submit"><i class="fas fa-plus"></i> Add Crop</button>
+        </form>
+
+        <form id="orderForm" class="form" onsubmit="saveOrder(event)">
+          <h2>Place Supply Chain Order</h2>
+          <input type="text" id="orderId" placeholder="Order ID" required>
+          <input type="text" id="customerName" placeholder="Buyer Name" required>
+          <select id="orderCrop" required>
+            <option value="">Select Crop</option>
+          </select>
+          <input type="number" id="orderQty" placeholder="Quantity (Units)" required onchange="calculateTotal()">
+          <input type="number" id="orderTotal" placeholder="Total Cost (₹)" readonly>
+          <button type="submit"><i class="fas fa-check"></i> Place Order</button>
+        </form>
+
+        <form id="paymentForm" class="form" onsubmit="savePayment(event)">
+          <h2>Process Payment</h2>
+          <input type="text" id="paymentId" placeholder="Payment ID" required>
+          <input type="text" id="paymentOrderId" placeholder="Order ID" required>
+          <select id="paymentMode" required>
+            <option value="Cash">Cash</option>
+            <option value="Card">Card</option>
+            <option value="Online">Online</option>
+          </select>
+          <select id="paymentStatus" required>
+            <option value="Paid">Paid</option>
+            <option value="Pending">Pending</option>
+          </select>
+          <button type="submit"><i class="fas fa-money-bill-wave"></i> Process Payment</button>
+        </form>
+
+        <!-- Edit Forms (hidden by default) -->
+        <form id="editSupplierForm" class="form" style="display:none;">
+          <h2>Edit Supplier</h2>
+          <input type="text" id="editSupplierId" readonly>
+          <input type="text" id="editSupplierName" required>
+          <input type="text" id="editSupplierContact" required>
+          <input type="text" id="editSupplierLocation" required>
+          <button type="submit">Update Supplier</button>
+        </form>
+
+        <form id="editCropForm" class="form" style="display:none;">
+          <h2>Edit Crop</h2>
+          <input type="text" id="editCropId" readonly>
+          <input type="text" id="editCropName" required>
+          <input type="text" id="editCropSeason" required>
+          <input type="number" id="editCropPrice" required>
+          <button type="submit">Update Crop</button>
+        </form>
+
+        <form id="editOrderForm" class="form" style="display:none;">
+          <h2>Edit Order</h2>
+          <input type="text" id="editOrderId" readonly>
+          <input type="text" id="editCustomerName" required>
+          <input type="text" id="editOrderCropId" required>
+          <input type="number" id="editOrderQty" required>
+          <input type="number" id="editOrderTotal" required>
+          <button type="submit">Update Order</button>
+        </form>
+
+        <form id="editPaymentForm" class="form" style="display:none;">
+          <h2>Edit Payment</h2>
+          <input type="text" id="editPaymentId" readonly>
+          <input type="text" id="editPaymentOrderId" required>
+          <input type="text" id="editPaymentMode" required>
+          <input type="text" id="editPaymentStatus" required>
+          <button type="submit">Update Payment</button>
+        </form>
+      </section>
+
+      <!-- =======================
+           DASHBOARD SECTION
+      ======================= -->
+      <section id="dashboard" class="section active">
+        <h2>Supply Chain Dashboard</h2>
+        <div class="quick-stats">
+          <div class="stat-item"><i class="fas fa-users"></i><span id="totalFarmers">0</span><p>Suppliers</p></div>
+          <div class="stat-item"><i class="fas fa-leaf"></i><span id="totalCrops">0</span><p>Crops</p></div>
+          <div class="stat-item"><i class="fas fa-truck"></i><span id="totalOrders">0</span><p>Orders</p></div>
+          <div class="stat-item"><i class="fas fa-rupee-sign"></i><span id="totalPayments">0</span><p>Payments</p></div>
+        </div>
+
+        <input type="text" id="search" placeholder="Search suppliers, crops, or orders...">
+
+        <div class="data-grid">
+          <div class="data-section"><h3>Suppliers</h3><div id="farmersList" class="list"></div></div>
+          <div class="data-section"><h3>Crops</h3><div id="cropsList" class="list"></div></div>
+          <div class="data-section"><h3>Orders</h3><div id="ordersList" class="list"></div></div>
+          <div class="data-section"><h3>Payments</h3><div id="paymentsList" class="list"></div></div>
+        </div>
+      </section>
+
+      <!-- =======================
+           CHAIN FLOW SECTION
+      ======================= -->
+      <section id="chain" class="section">
+        <h2>Supply Chain Flow</h2>
+        <div class="chain-flow">
+          <div class="chain-step"><i class="fas fa-tractor"></i><h4>Supplier Farming</h4><p>Crops grown by suppliers.</p></div>
+          <i class="fas fa-arrow-right chain-arrow"></i>
+          <div class="chain-step"><i class="fas fa-seedling"></i><h4>Crop Inventory</h4><p>Crops added to database.</p></div>
+          <i class="fas fa-arrow-right chain-arrow</i>
+                        <h4>Supplier Farming</h4>
+                        <p>Crops grown by suppliers.</p>
+                    </div>
+                    <i class="fas fa-arrow-right chain-arrow"></i>
+                    <div class="chain-step">
+                        <i class="fas fa-seedling"></i>
+                        <h4>Crop Inventory</h4>
+                        <p>Crops added to database.</p>
+                    </div>
+                    <i class="fas fa-arrow-right chain-arrow"></i>
+                    <div class="chain-step">
+                        <i class="fas fa-shopping-cart"></i>
+                        <h4>Order Placement</h4>
+                        <p>Buyers place orders.</p>
+                    </div>
+                    <i class="fas fa-arrow-right chain-arrow"></i>
+                    <div class="chain-step">
+                        <i class="fas fa-rupee-sign"></i>
+                        <h4>Payment Processing</h4>
+                        <p>Payments finalized in ₹.</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <footer>
+        <p>© 2023 Agriculture Crop Supply Chain Database | College Project</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
